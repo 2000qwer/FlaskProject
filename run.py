@@ -1,5 +1,5 @@
 
-from flaskBlog import  app
+from flaskBlog import app
 
 
 
