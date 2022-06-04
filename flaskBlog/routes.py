@@ -1,9 +1,8 @@
-from flask import  render_template, url_for, flash, redirect ,request
+from flask import render_template, url_for, flash, redirect, request
 from flaskBlog.forms import RegistrationForm, LoginForm
-from flaskBlog.models import Post,User
-from flaskBlog import app,bcrypt,db
-from flask_login import login_user , current_user , logout_user , login_required
-
+from flaskBlog.models import Post, User
+from flaskBlog import app, bcrypt, db
+from flask_login import login_user, current_user, logout_user, login_required
 
 posts = [
     {
@@ -20,6 +19,7 @@ posts = [
     }
 ]
 
+
 @app.route('/')
 @app.route('/home')
 def home():
@@ -33,12 +33,12 @@ def about():
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    if  current_user.is_authenticated:
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data ,email=form.email.data, password = hashed_password )
+        user = User(username=form.username.data, email=form.email.data, password=hashed_password)
         db.session.add(user)
         db.session.commit()
         flash('Your account has been created! You are now able to log in ', 'success')
@@ -48,19 +48,18 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if  current_user.is_authenticated:
+    if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password,form.password.data):
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
-            flash('Login successful . welcome again '+str(user.username), 'success')
+            flash('Login successful . welcome again ' + str(user.username), 'success')
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful . Please try again', 'danger')
-
 
     return render_template('login.html', title='Login', form=form)
 
@@ -74,4 +73,4 @@ def logout():
 @app.route('/account')
 @login_required
 def account():
-    return render_template('account.html',tittle='Account')
+    return render_template('account.html', tittle='Account')
