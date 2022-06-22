@@ -1,7 +1,7 @@
 import secrets, os
 from PIL import Image
 from flask import render_template, url_for, flash, redirect, request
-from flaskBlog.forms import RegistrationForm, LoginForm, UpdateAccountForm
+from flaskBlog.forms import PostForm,RegistrationForm,LoginForm,UpdateAccountForm
 from flaskBlog.models import Post, User
 from flaskBlog import app, bcrypt, db
 from flask_login import login_user, current_user, logout_user, login_required
@@ -25,6 +25,7 @@ posts = [
 @app.route('/')
 @app.route('/home')
 def home():
+    posts = Post.query.all()
     return render_template('home.html', posts=posts)
 
 
@@ -77,6 +78,7 @@ def save_picture(form_picture):
     _, f_ext = os.path.splitext(form_picture.filename)
     picture_fn = random_hex + f_ext
     picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+
     output_size = (125 , 125)
     i = Image.open(form_picture)
     i.thumbnail(output_size)
@@ -96,7 +98,7 @@ def account():
         current_user.username = form.username.data
         current_user.email = form.email.data
         db.session.commit()
-        flash('Your asccount has been updated!', 'success')
+        flash('Your account has been updated!', 'success')
         return redirect(url_for('account'))
     elif request.method == 'GET':
         form.username.data = current_user.username
@@ -105,3 +107,24 @@ def account():
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', tittle='Account',
                            image_file=image_file, form=form)
+
+@app.route('/post/new', methods=['GET', 'POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data, content= form.content.data, author= current_user)
+        db.session.add(post)
+        db.session.commit()
+
+        flash('Your post has been created!', 'success')
+        return redirect(url_for('home'))
+    return render_template('create_post.html', title='New Post',
+                           form=form)
+
+
+
+@app.route('/post/<post_id>')
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title = post.title, post=post)
